@@ -5,6 +5,7 @@ const express = require("express");
 const axios = require("axios");
 
 const connectionInfo = require("./connectionInfo.js").connectionInfo
+const getFacturaArray = require("./getFacturaArray").getFacturaArray
 
 const app = express();
 
@@ -13,11 +14,25 @@ const directoryPath = path.join(__dirname, DIRECTORYNAME);
 
 let currentInvoiceNumber = 22000
 
+let fecha
+let year, month, date
+
+if(!fecha){
+    year = getFullYear()
+    month = getMonth()
+    date = getDate()	
+}else{
+    fecha = fecha.split("/")
+    year = fecha[0]
+    month = fecha[1]
+    date = fecha[2]
+}
+
 let authHeader
 
 const startProcess = () => {
     //call software for current invoice number
-    apiCall()
+    getFactura()
 }
 
 const readExcels = () => {
@@ -43,7 +58,7 @@ const readExcels = () => {
 
 
 const apiAuth = () => {
-    const response = axios('https://api.sdelsol.com/login/Autenticar', {
+    axios('https://api.sdelsol.com/login/Autenticar', {
             method: 'POST',
             data: connectionInfo
         })
@@ -67,8 +82,8 @@ apiAuth()
 
 
 const apiCall = () => {
-    axios
-        .get(`https://jsonplaceholder.typicode.com/posts/1`)
+    console.log(authHeader)
+    axios(`https://jsonplaceholder.typicode.com/posts/1`)
 
         // Print data
         .then((response) => {
@@ -80,4 +95,59 @@ const apiCall = () => {
             readExcels()
         })
         .catch((error) => console.log("Error to fetch data\n", error));
+}
+
+
+const getFactura = () => {
+
+    let sendData = {
+        ejercicio: "2022",
+        consulta: `SELECT * FROM F_FAC`
+    }
+
+    axios('https://api.sdelsol.com/admin/LanzarConsulta', {
+            method: 'POST',
+            data: sendData,
+            headers: authHeader
+        })
+        .then((res) => {
+            currentInvoiceNumber = res.data.resultado[res.data.resultado.length-1][1].dato + 1
+            console.log("this is currentInvoiceNumber", currentInvoiceNumber) // el ultimo numero de factura sin el año delante
+            insertRegistro(year, "F_FAC", getFacturaArray(currentInvoiceNumber, year, month, date))
+
+        })
+        .catch((err) => console.log(err))
+
+}
+
+
+const insertRegistro = (year, table, registro) => {
+
+    axios('https://api.sdelsol.com/admin/EscribirRegistro', {
+            method: 'POST',
+            data: {
+                ejercicio: year,
+                tabla: table,
+                registro: registro
+            },
+            headers: authHeader
+        })
+        .then((res) => {
+            console.log(res.data)
+        })
+        .catch((err) => console.log(err))
+
+}
+
+
+
+
+const buscarPresupuesto = async () => {
+    let sendData = {
+        ejercicio: "2022",
+        consulta: `SELECT * FROM F_PRE`
+    }
+
+    presupuesto = await getPresupuesto(sendData)
+    return presupuesto.resultado[0]
 }
