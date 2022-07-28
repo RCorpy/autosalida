@@ -16,46 +16,19 @@ let currentInvoiceNumber = 22000
 
 let fecha
 let year, month, date
+let authHeader
 
 if(!fecha){
-    year = getFullYear()
-    month = getMonth()
-    date = getDate()	
+    const d = new Date();
+    year = d.getFullYear()
+    month = d.getMonth() +1
+    date = d.getDate()	
 }else{
     fecha = fecha.split("/")
     year = fecha[0]
     month = fecha[1]
     date = fecha[2]
 }
-
-let authHeader
-
-const startProcess = () => {
-    //call software for current invoice number
-    getFactura()
-}
-
-const readExcels = () => {
-
-    fs.readdir(directoryPath, function (err, excels) {
-        //handling error
-        if (err) {
-            return console.log('Unable to scan directory: ' + err);
-        }
-        //listing all excels using forEach
-        excels.forEach((excel) => {
-            //write invoiceNumber in excel and increment
-            //get data for software
-            //upload data to software
-            //make excel into pdf
-            //send email with pdf to client
-            console.log(excel)
-        })
-    });
-
-}
-
-
 
 const apiAuth = () => {
     axios('https://api.sdelsol.com/login/Autenticar', {
@@ -70,33 +43,12 @@ const apiAuth = () => {
             startProcess()
         })
         .catch((err) => console.log(err))
-
 }
 
-
-apiAuth()
-
-//startProcess()
-
-
-
-
-const apiCall = () => {
-    console.log(authHeader)
-    axios(`https://jsonplaceholder.typicode.com/posts/1`)
-
-        // Print data
-        .then((response) => {
-            const {
-                id,
-                title
-            } = response.data;
-            console.log(`Post ${id}: ${title}\n`);
-            readExcels()
-        })
-        .catch((error) => console.log("Error to fetch data\n", error));
+const startProcess = () => {
+    //call software for current invoice number
+    getFactura()
 }
-
 
 const getFactura = () => {
 
@@ -113,13 +65,44 @@ const getFactura = () => {
         .then((res) => {
             currentInvoiceNumber = res.data.resultado[res.data.resultado.length-1][1].dato + 1
             console.log("this is currentInvoiceNumber", currentInvoiceNumber) // el ultimo numero de factura sin el año delante
-            insertRegistro(year, "F_FAC", getFacturaArray(currentInvoiceNumber, year, month, date))
-
+            readExcels()
         })
         .catch((err) => console.log(err))
 
 }
 
+const readExcels = () => {
+
+    fs.readdir(directoryPath, function (err, excels) {
+        //handling error
+        if (err) {
+            return console.log('Unable to scan directory: ' + err);
+        }
+        //listing all excels using forEach
+        excels.forEach((excel) => {
+            
+            //get data for software
+            XlsxPopulate.fromFileAsync(path.join(directoryPath, excel))
+            .then(workbook => {
+                let proformaSheet = workbook.sheet("proforma")
+                let facturaSheet = workbook.sheet("factura")
+
+                console.log(proformaSheet.usedRange().value()[51-3]) // -3 (1 por la posicion 0 y 2 por el margen de arriba)
+                console.log(proformaSheet.cell("B51").value())
+            })
+            
+            //make excel into pdf
+            //send email with pdf to client
+
+            //upload data to software
+            insertRegistro(year, "F_FAC", getFacturaArray(currentInvoiceNumber, year, month, date)) // hacer esto para cada factura
+            //write invoiceNumber in excel and increment
+
+            currentInvoiceNumber= currentInvoiceNumber+1
+        })
+    });
+
+}
 
 const insertRegistro = (year, table, registro) => {
 
@@ -136,18 +119,6 @@ const insertRegistro = (year, table, registro) => {
             console.log(res.data)
         })
         .catch((err) => console.log(err))
-
 }
 
-
-
-
-const buscarPresupuesto = async () => {
-    let sendData = {
-        ejercicio: "2022",
-        consulta: `SELECT * FROM F_PRE`
-    }
-
-    presupuesto = await getPresupuesto(sendData)
-    return presupuesto.resultado[0]
-}
+apiAuth()

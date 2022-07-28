@@ -9,6 +9,15 @@ const getFacturaArray = (currentInvoiceNumber, year, month, date) => {
         });
       }
 
+    let descuento = 50
+    let portes = 17
+    let netoFactura = 10
+    let descuentoFactura = netoFactura*(descuento/100)
+    let baseFactura = descuentoFactura+portes
+    let ivaFact = baseFactura*0.21
+    let totalFact = baseFactura + ivaFact
+
+
     let stringYear = year.toString()
     let factura = [{
             "columna": "TIPFAC",
@@ -24,7 +33,7 @@ const getFacturaArray = (currentInvoiceNumber, year, month, date) => {
         },
         {
             "columna": "FECFAC",
-            "dato": "26-jul-22"`${date}-${toMonthName(month)}-${year}`
+            "dato":`${date}-${toMonthName(month)}-${year}`
         },
         {
             "columna": "CLIFAC", //CNOFAC   CDOFAC  CPOFAC  CCPFAC  CPRFAC  CNIFAC  TIVFAC  REQFAC  TELFAC CEMFAC
@@ -32,15 +41,15 @@ const getFacturaArray = (currentInvoiceNumber, year, month, date) => {
         },
         {
             "columna": "NET1FAC",
-            "dato": 10
+            "dato": netoFactura
         },
         {
-            "columna": "PDTO1FAC", //IDTO1FAC <-- solo vale este, habra que calcularlo y ponerlo
-            "dato": 40
+            "columna": "IDTO1FAC", //IDTO1FAC <-- solo vale este, habra que calcularlo y ponerlo
+            "dato": descuentoFactura
         },
         {
             "columna": "IPOR1FAC",
-            "dato": 17
+            "dato": portes
         },
         {
             "columna": "FOPFAC",
@@ -64,11 +73,11 @@ const getFacturaArray = (currentInvoiceNumber, year, month, date) => {
         },
         {
             "columna": "BAS1FAC", //dato calculado
-            "dato": 27
+            "dato": baseFactura
         },
         {
             "columna": "IIVA1FAC", //dato calculado
-            "dato": 5.3
+            "dato": ivaFact
         },
         {
             "columna": "PREC1FAC",
@@ -84,7 +93,7 @@ const getFacturaArray = (currentInvoiceNumber, year, month, date) => {
         },
         {
             "columna": "VENFAC",
-            "dato": "26/07/2022"
+            "dato": `${date}/${month}/${year}`
         },
         {
             "columna": "IMPFAC",
@@ -100,7 +109,7 @@ const getFacturaArray = (currentInvoiceNumber, year, month, date) => {
         },
         {
             "columna": "EDRFAC",
-            "dato": 2022
+            "dato": year
         },
         {
             "columna": "BCOFAC",
@@ -108,7 +117,7 @@ const getFacturaArray = (currentInvoiceNumber, year, month, date) => {
         },
         {
             "columna": "TOTFAC",
-            "dato": 25
+            "dato": totalFact
         },
     ]
 
